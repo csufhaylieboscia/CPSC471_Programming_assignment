@@ -1,5 +1,5 @@
 # Server code
-from socket import *
+import socket
 
 # The port on which to listen
 serverPort = 12000 
