@@ -2,6 +2,8 @@
 
 ## Names and Emails
 Calista Ruiz | calistaruiz@csu.fullerton.edu
+Anna Pham | ahpham123@csu.fullerton.edu
+Haylie Boscia | haylieboscia@csu.fullerton.edu
 
 ## Programming Languages used
 * python
