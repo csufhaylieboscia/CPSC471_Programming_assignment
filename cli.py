@@ -24,8 +24,12 @@ def ControlChannel(serverName, serverPort):
         print ("there was an error resolving the host")
         sys.exit() 
 
-    # connecting to the server with IP
-    clientSocket.connect((hostIP, serverPort)) 
+    # connecting to the server with IPs
+    try:
+        clientSocket.connect((hostIP, serverPort)) 
+    except socket.error as e:
+        print("Error connecting to server:", e)
+        sys.exit(1)
     # or with server name
     # clientSocket.connect((serverName , serverPort))
 
