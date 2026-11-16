@@ -1,7 +1,7 @@
 # CPSC 471 Programming Assignment
 
 ## Names and Emails
-
+Calista Ruiz | calistaruiz@csu.fullerton.edu
 
 ## Programming Languages used
 * python
