@@ -7,7 +7,7 @@ Anna Pham | ahpham123@csu.fullerton.edu
 
 Haylie Boscia | haylieboscia@csu.fullerton.edu
 
-Spencer Blunt | sblunt3@csu,fullerton.edu
+Spencer Blunt | sblunt3@csu.fullerton.edu
 
 
 ## Programming Languages used
