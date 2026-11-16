@@ -56,6 +56,7 @@ while 1:
                     raise FileNotFoundError(fileName)
                 send_msg(connectionSocket, "OK")
                 dataSocket = DataChannel(addr[0], int(args[1]))
+                dataSocket.sendall(str(os.path.getsize(fileName)).zfill(HEADER_SIZE).encode())
                 byteCount = 0
                 with open(fileName, "rb") as fileObj:
                     while 1:
@@ -72,7 +73,7 @@ while 1:
                 fileName = os.path.basename(args[0])
                 send_msg(connectionSocket, "OK")
                 dataSocket = DataChannel(addr[0], int(args[1]))
-                data = recv_msg(dataSocket)
+                recv_all(dataSocket, HEADER_SIZE)
                 byteCount = 0
                 with open(fileName, "wb") as fileObj:
                     while 1:
