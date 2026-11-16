@@ -41,28 +41,48 @@ while 1:
         cmd, args = request[0], request[1:]
         try:
             if cmd == "ls":
+                if len(args) != 1:
+                    raise ValueError("Invalid ls argument")
                 send_msg(connectionSocket, "OK")
                 dataSocket = DataChannel(addr[0], int(args[0]))
                 send_msg(dataSocket, "\n".join(os.listdir(".")))
                 dataSocket.close()
             elif cmd == "get":
+                if len(args) != 2:
+                    raise ValueError("Invalid get arguments")
                 fileName = os.path.basename(args[0])
                 if not os.path.isfile(fileName):
                     send_msg(connectionSocket, "ERR file not found")
                     raise FileNotFoundError(fileName)
                 send_msg(connectionSocket, "OK")
                 dataSocket = DataChannel(addr[0], int(args[1]))
+                byteCount = 0
                 with open(fileName, "rb") as fileObj:
-                    send_msg(dataSocket, fileObj.read())
+                    while 1:
+                        data = fileObj.read(4096)
+                        if not data:
+                            break
+                        dataSocket.sendall(data)
+                        byteCount += len(data)
                 dataSocket.close()
+                send_msg(connectionSocket, f"Done {fileName} {byteCount}")
             elif cmd == "put":
+                if len(args) != 2:
+                    raise ValueError("Invalid put arguments")
                 fileName = os.path.basename(args[0])
                 send_msg(connectionSocket, "OK")
                 dataSocket = DataChannel(addr[0], int(args[1]))
                 data = recv_msg(dataSocket)
-                dataSocket.close()
+                byteCount = 0
                 with open(fileName, "wb") as fileObj:
-                    fileObj.write(data)
+                    while 1:
+                        data = dataSocket.recv(4096)
+                        if not data:
+                            break
+                        fileObj.write(data)
+                        byteCount += len(data)
+                dataSocket.close()
+                send_msg(connectionSocket, f"Done {fileName} {byteCount}")
             else:
                 send_msg(connectionSocket, "ERR unknown command")
                 raise ValueError("unknown command " + cmd)
