@@ -88,6 +88,7 @@ def Transfer(clientSocket, cmd, fileName=None):
     dataSocket.close()
 
     if cmd != "ls":
+        recv_msg(clientSocket)
         print(fileName, ":", len(data), "bytes transferred")
     
 def main():
