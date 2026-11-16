@@ -1,7 +1,8 @@
 # Client code
 import socket
 import sys
-
+import os
+from common import *
 
 
 # Name and port number of the server to
@@ -12,7 +13,7 @@ def ControlChannel(serverName, serverPort):
     # serverPort = 12000
 
     # Create a socket
-    clientSocket = socket.socket(socket.AF_INET, socket.SOCKSTREAM)
+    clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Get the ip from a domain Name 
     try: 
@@ -30,38 +31,61 @@ def ControlChannel(serverName, serverPort):
 
     return clientSocket
 
-    
-def DataChannel(serverAddr, fileName):
+# Client listens on ephemeral port, server connects to it
+def DataChannel():
 
     # Create a socket
     dataSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Bind the socket to port 0
     dataSocket.bind(('',0))
+    dataSocket.listen(1)
 
     # Retreive the ephemeral port number
-    print( "I chose ephemeral port: ", dataSocket.getsockname()[1]
-    )
+    return dataSocket
 
-    dataSocket.connect((ServerAddr, dataSocket.getsockname()[1] ))
+# Runs one ls / get / put on server using a fresh data channel from client
+def Transfer(clientSocket, cmd, fileName=None):
+    if cmd == "put" and not os.path.isfile(fileName):
+        print("local file not found")
+        return
+    
+    dataSocket = DataChannel()
+    port = dataSocket.getsockname()[1]
 
-    # A string we want to send to the server
-    # data = 'Hello world! This is a very long string.'
+    # Tell the server the command and which port we are listening on
+    if fileName:
+        send_msg(clientSocket, cmd + " " + fileName + " " + str(port))
+    else:
+        send_msg(clientSocket, cmd + " " + str(port))
 
-    fileObj = open(fileName, "r")
+    status = recv_msg(clientSocket).decode()
+    if status != "OK":
+        print(status)
+        dataSocket.close()
+        return
 
+    connSocket, _ = dataSocket.accept()
 
-    bytesSent = 0
+    if cmd == "put":
+        with open(fileName, "rb") as fileObj:
+            data = fileObj.read()
+        send_msg(connSocket, data)
+    else:
+        data = recv_msg(connSocket)
+        if cmd == "ls":
+            print(data.decode())
+        else: # get
+            with open(fileName, "wb") as fileObj:
+                fileObj.write(data)
 
-    # Keep sending bytes until all bytes are sent
-    while bytesSent != len(data):
-
-        # Send that string!
-        bytesSent += dataSocket.send(data[bytesSent:])
-
-    # Close the socket
+    # Tear down the data channel after every transfer
+    connSocket.close()
     dataSocket.close()
 
+    if cmd != "ls":
+        print(fileName, ":", len(data), "bytes transferred")
+    
 def main():
     if len(sys.argv) != 3:
         print("Error: Please provide 2 arguments")
@@ -70,5 +94,22 @@ def main():
     user_args = sys.argv[1:]
 
     serverName = user_args[0]
-    serverPort = user_args[1]
+    serverPort = int(user_args[1])
+    clientSocket = ControlChannel(serverName, serverPort)
 
+    while 1:
+        parts = input("ftp> ").split()
+        if not parts:
+            continue
+
+        if parts[0] == "quit":
+            clientSocket.close()
+            break
+        elif parts[0] == "ls" and len(parts) == 1: # ls <directory> is not supported
+            Transfer(clientSocket, "ls")
+        elif parts[0] in ("get", "put") and len(parts) == 2:
+            Transfer(clientSocket, parts[0], parts[1])
+        else:
+            print("commands: get <file>, put <file>, ls, quit")
+
+main()
